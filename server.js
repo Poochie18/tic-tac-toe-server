@@ -1,8 +1,16 @@
+const http = require('http');
 const WebSocket = require('ws');
 
-// Используем переменную окружения PORT от Render или 8080 для локальной разработки
 const port = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port });
+
+// Создаём HTTP-сервер
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('WebSocket server is running\n');
+});
+
+// Подключаем WebSocket к HTTP-серверу
+const wss = new WebSocket.Server({ server });
 
 const rooms = new Map();
 
@@ -72,4 +80,6 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-console.log(`Server running on port ${port}`);
+server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
