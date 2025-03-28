@@ -145,3 +145,30 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
+function keepAlive() {
+    setInterval(() => {
+        const options = {
+            hostname: 'your-app.onrender.com', // Замените на ваш домен Render
+            port: 80, // или 443, если используете HTTPS
+            path: '/',
+            method: 'GET'
+        };
+
+        const req = http.request(options, (res) => {
+            console.log(`Keep-alive ping: ${res.statusCode}`);
+        });
+
+        req.on('error', (e) => {
+            console.error(`Keep-alive error: ${e.message}`);
+        });
+
+        req.end();
+    }, 1 * 60 * 1000); // Каждые 5 минут
+}
+
+// Запускаем сервер и keep-alive
+server.listen(port, host, () => {
+    console.log(`Server running on ${host}:${port}`);
+    keepAlive(); // Запускаем пинг
+});
