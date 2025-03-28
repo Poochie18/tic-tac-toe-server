@@ -10,7 +10,6 @@ const server = http.createServer((req, res) => {
     console.log(`HTTP request received: ${req.method} ${req.url}`);
     res.writeHead(200, { 
         'Content-Type': 'text/plain',
-        // Добавляем заголовки для поддержки WebSocket
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST',
         'Access-Control-Allow-Headers': 'Upgrade, Connection'
@@ -34,9 +33,37 @@ wss.on('error', (error) => {
     console.error('WebSocket server error:', error);
 });
 
+// Функция для самопинга
+function keepAlive() {
+    setInterval(() => {
+        const options = {
+            hostname: 'tic-tac-toe-server-new.onrender.com', // Ваш домен Render
+            port: 443, // Используем 443 для HTTPS
+            path: '/',
+            method: 'GET',
+            headers: {
+                'Host': 'tic-tac-toe-server-new.onrender.com'
+            }
+        };
+
+        const req = https.request(options, (res) => { // Используем https вместо http
+            console.log(`Keep-alive ping: ${res.statusCode}`);
+        });
+
+        req.on('error', (e) => {
+            console.error(`Keep-alive error: ${e.message}`);
+        });
+
+        req.end();
+    }, 5 * 60 * 1000); // Каждые 5 минут
+}
+
+// Подключаем модуль https (добавьте в начало файла, если ещё не импортирован)
+const https = require('https');
+
 wss.on('connection', (ws, req) => {
     console.log(`New client connected: ${req.url}`);
-
+    // Ваш существующий код обработки WebSocket-соединений...
     try {
         const url = req.url;
         if (url.startsWith('/create')) {
@@ -132,9 +159,10 @@ wss.on('connection', (ws, req) => {
     }
 });
 
-// Запускаем сервер
+// Запускаем сервер и keep-alive
 server.listen(port, host, () => {
     console.log(`Server running on ${host}:${port}`);
+    keepAlive(); // Запускаем пинг
 });
 
 // Обработка завершения работы сервера
@@ -144,31 +172,4 @@ process.on('SIGTERM', () => {
         console.log('HTTP server closed');
         process.exit(0);
     });
-});
-
-function keepAlive() {
-    setInterval(() => {
-        const options = {
-            hostname: 'your-app.onrender.com', // Замените на ваш домен Render
-            port: 80, // или 443, если используете HTTPS
-            path: '/',
-            method: 'GET'
-        };
-
-        const req = http.request(options, (res) => {
-            console.log(`Keep-alive ping: ${res.statusCode}`);
-        });
-
-        req.on('error', (e) => {
-            console.error(`Keep-alive error: ${e.message}`);
-        });
-
-        req.end();
-    }, 1 * 60 * 1000); // Каждые 5 минут
-}
-
-// Запускаем сервер и keep-alive
-server.listen(port, host, () => {
-    console.log(`Server running on ${host}:${port}`);
-    keepAlive(); // Запускаем пинг
 });
